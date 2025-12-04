@@ -1,7 +1,7 @@
 // app/page.js
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { 
@@ -20,12 +20,45 @@ export default function Home() {
   });
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [showLicenseInput, setShowLicenseInput] = useState(false);
+  const [isClient, setIsClient] = useState(false); // Track if we're on client
 
   const previewRef = useRef(null);
 
-  // Theme handler
+  // Fix: Use useEffect to run only on client
+  useEffect(() => {
+    setIsClient(true);
+    
+    // Check for saved license on client only
+    const savedLicense = localStorage.getItem('markdown-pro-license');
+    if (savedLicense) {
+      setLicense({
+        key: savedLicense,
+        isValid: true
+      });
+    }
+    
+    // Check for saved theme
+    const savedTheme = localStorage.getItem('markdown-pro-theme');
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+    
+    // Check for saved markdown draft
+    const savedDraft = localStorage.getItem('markdown-draft');
+    if (savedDraft) {
+      setMarkdown(savedDraft);
+    }
+  }, []); // Empty array means run once on mount
+
+  // Theme handler - save to localStorage
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    
+    // Save to localStorage only on client
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('markdown-pro-theme', newTheme);
+    }
   };
 
   // Export to HTML
@@ -102,11 +135,10 @@ export default function Home() {
       setIsPremiumModalOpen(true);
       return;
     }
-    // Mock PDF export for now
     alert('✅ Premium PDF export feature!\n(Will be implemented with jsPDF)');
   };
 
-  // Activate license
+  // Activate license - FIXED: Check for window
   const activateLicense = (key) => {
     // Simple mock validation
     const mockValid = key && key.length > 10;
@@ -120,23 +152,14 @@ export default function Home() {
       setIsPremiumModalOpen(false);
       setShowLicenseInput(false);
       
-      // Save to localStorage
-      localStorage.setItem('markdown-pro-license', key);
+      // Save to localStorage only on client
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('markdown-pro-license', key);
+      }
     } else {
       alert('❌ Invalid license key. Please check and try again.');
     }
   };
-
-  // Check for saved license on load
-  useState(() => {
-    const savedLicense = localStorage.getItem('markdown-pro-license');
-    if (savedLicense) {
-      setLicense({
-        key: savedLicense,
-        isValid: true
-      });
-    }
-  }, []);
 
   // Quick actions
   const quickActions = [
@@ -154,12 +177,32 @@ export default function Home() {
     const newText = markdown.substring(0, start) + text + markdown.substring(end);
     setMarkdown(newText);
     
-    // Focus back and set cursor position
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + text.length, start + text.length);
     }, 0);
   };
+
+  // Save draft - FIXED: Check for window
+  const saveDraft = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('markdown-draft', markdown);
+      alert('Draft saved locally!');
+    }
+  };
+
+  // Only render client-side features after component mounts
+  if (!isClient) {
+    // Show loading or basic version during server render
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Markdown Editor Pro</h1>
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen transition-colors ${theme === 'dark' ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
@@ -279,7 +322,7 @@ export default function Home() {
                 Load Sample
               </button>
               <button
-                onClick={() => localStorage.setItem('markdown-draft', markdown)}
+                onClick={saveDraft}
                 className="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-1.5"
               >
                 <Save size={14} />
@@ -443,10 +486,11 @@ export default function Home() {
       <footer className="max-w-7xl mx-auto px-4 py-8 mt-8 border-t border-gray-200 dark:border-gray-800">
         <div className="text-center text-gray-500 text-sm">
           <p>Markdown Pro • Built with Next.js & Tailwind CSS</p>
+          <p>A Product of <span class="text-blue-500">Akshaya Tech Ventures</span></p>
           <p className="mt-2">
-            <a href="https://github.com" className="hover:text-purple-600 transition">GitHub</a> • 
-            <a href="/privacy" className="hover:text-purple-600 transition mx-4">Privacy</a> • 
-            <a href="/terms" className="hover:text-purple-600 transition">Terms</a>
+            <a href="https://github.com/acbhaskar1" className="hover:text-purple-600 transition">GitHub</a> • 
+            <a href="#" className="hover:text-purple-600 transition mx-4">Privacy</a> • 
+            <a href="#" className="hover:text-purple-600 transition">Terms</a>
           </p>
         </div>
       </footer>
