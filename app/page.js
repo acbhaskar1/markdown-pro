@@ -472,7 +472,7 @@ export default function Home() {
             </ul>
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <a
-                href="mailto:custom@example.com"
+                href="mailto:acbhaskar1@gmail.com"
                 className="block w-full text-center py-2 border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
               >
                 Contact for Pricing
